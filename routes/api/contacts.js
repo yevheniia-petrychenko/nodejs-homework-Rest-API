@@ -53,7 +53,7 @@ router.delete('/:contactId', async (req, res, next) => {
         status: 'succes',
         code: 200,
         data: { contact },
-        message: 'C ontact deleted',
+        message: 'Contact deleted',
       });
     }
     return res
