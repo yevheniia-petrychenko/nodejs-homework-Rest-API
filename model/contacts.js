@@ -1,34 +1,47 @@
 // const fs = require('fs/promises')
-const db = require('./db');
-const { v4: uuid } = require('uuid');
+const Contact = require('./schemas/contact');
 
 const getAll = async () => {
-  return db.get('contacts').value();
+  const results = await Contact.find({});
+  return results;
 };
 
 const getContactById = async (contactId) => {
-  return db.get('contacts').find({ contactId }).value();
+  const result = await Contact.findOne({ _id: contactId });
+
+  return result;
 };
 
 const removeContact = async (contactId) => {
-  const [record] = db.get('contacts').remove({ contactId }).write();
-  return record;
+  const result = await Contact.findByIdAndDelete({ _id: contactId });
+  return result;
 };
 
 const addContact = async (body) => {
-  const contactId = uuid();
-  const record = {
-    contactId,
-    ...body,
-  };
-  db.get('contacts').push(record).write();
-  return record;
+  const result = await Contact.create(body);
+  return result;
 };
 
 const updateContact = async (contactId, body) => {
-  const record = db.get('contacts').find({ contactId }).assign(body).value();
-  db.write();
-  return record.contactId ? record : null;
+  const result = await Contact.findOneAndUpdate(
+    {
+      _id: contactId,
+    },
+    { ...body },
+    { new: true }
+  );
+  return result;
+};
+
+const updateStatusContact = async (contactId, body) => {
+  const result = await Contact.findOneAndUpdate(
+    {
+      _id: contactId,
+    },
+    { ...body },
+    { new: true }
+  );
+  return result;
 };
 
 module.exports = {
@@ -37,4 +50,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact,
 };
