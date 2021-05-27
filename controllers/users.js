@@ -4,6 +4,7 @@ const {
   create,
   update,
   updateToken,
+  getUserByToken,
 } = require('../model/users');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
@@ -61,10 +62,30 @@ const login = async (req, res, next) => {
   }
 };
 
+const getUser = async (req, res, next) => {
+  try {
+    const user = await getUserByToken(req.params.token);
+    const { email, subscription } = user;
+    if (!user) {
+      return res.status(HttpCode.UNAUTHORIZED).json({
+        status: 'error',
+        code: HttpCode.UNAUTHORIZED,
+        message: 'Not authorized',
+      });
+    }
+    return res.status(HttpCode.SUCCESS).json({
+      status: 'succes',
+      code: HttpCode.SUCCESS,
+      data: { email, subscription },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateSubscription = async (req, res, next) => {
   try {
     const user = await update(req.params.id, req.body);
-    console.log(req);
     if (user) {
       const { email, subscription } = user;
       return res.status(200).json({
@@ -86,4 +107,4 @@ const logout = async (req, res, next) => {
   return res.status(HttpCode.NO_CONTENT).json({});
 };
 
-module.exports = { signup, login, logout, updateSubscription };
+module.exports = { signup, login, getUser, logout, updateSubscription };
