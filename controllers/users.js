@@ -1,14 +1,16 @@
 const {
-  // findById,
   findByEmail,
   create,
   update,
   updateToken,
+  updateAvatar,
   getUserByToken,
 } = require('../model/users');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const AVATARS_OF_USERS = process.env.AVATARS_OF_USERS;
+const UploadAvatar = require('../services/avatar-local');
 const { HttpCode } = require('../helpers/constants');
 
 const signup = async (req, res, next) => {
@@ -23,12 +25,12 @@ const signup = async (req, res, next) => {
       });
     }
     const newUser = await create(req.body);
-    console.log(`here shoul be user ${newUser}`);
-    const { id, email, subscription } = newUser;
+    console.log(`here should be user ${newUser}`);
+    const { id, email, subscription, avatar } = newUser;
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
-      data: { id, email, subscription },
+      data: { id, email, subscription, avatar },
     });
   } catch (error) {
     next(error);
@@ -83,6 +85,27 @@ const getUser = async (req, res, next) => {
   }
 };
 
+const avatars = async (req, res, next) => {
+  try {
+    const id = req.user.id;
+    const uploads = new UploadAvatar(AVATARS_OF_USERS);
+    const avatarUrl = await uploads.saveAvatarToStatic({
+      idUser: id,
+      pathFile: req.file.path,
+      name: req.file.filename,
+      oldFile: req.user.avatar,
+    });
+    await updateAvatar(id, avatarUrl);
+    return res.json({
+      status: 'success',
+      code: HttpCode.SUCCESS,
+      data: { avatarUrl },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateSubscription = async (req, res, next) => {
   try {
     const user = await update(req.params.id, req.body);
@@ -107,4 +130,11 @@ const logout = async (req, res, next) => {
   return res.status(HttpCode.NO_CONTENT).json({});
 };
 
-module.exports = { signup, login, getUser, logout, updateSubscription };
+module.exports = {
+  signup,
+  login,
+  getUser,
+  avatars,
+  logout,
+  updateSubscription,
+};
