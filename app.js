@@ -1,6 +1,7 @@
 const express = require('express');
 const logger = require('morgan');
 const cors = require('cors');
+const path = require('path');
 const boolParser = require('express-query-boolean');
 const helmet = require('helmet');
 const usersRouter = require('./routes/api/users');
@@ -10,8 +11,15 @@ const app = express();
 
 const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short';
 
+// app.use(express.static('public'));
+
 app.use(helmet());
-app.use(logger(formatsLogger));
+
+require('dotenv').config();
+const AVATARS_OF_USERS = process.env.AVATARS_OF_USERS;
+app.use(express.static(path.join(__dirname, AVATARS_OF_USERS)));
+
+app.get('env') !== 'test' && app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
 app.use(boolParser());

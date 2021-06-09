@@ -1,15 +1,26 @@
 const {
-  // findById,
   findByEmail,
   create,
   update,
   updateToken,
+  updateAvatar,
   getUserByToken,
 } = require('../model/users');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
+const { promisify } = require('util');
 require('dotenv').config();
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+// const AVATARS_OF_USERS = process.env.AVATARS_OF_USERS;
+// const UploadAvatar = require('../services/avatar-local');
+const UploadAvatar = require('../services/avatar-cloud');
 const { HttpCode } = require('../helpers/constants');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
 
 const signup = async (req, res, next) => {
   try {
@@ -23,12 +34,12 @@ const signup = async (req, res, next) => {
       });
     }
     const newUser = await create(req.body);
-    console.log(`here shoul be user ${newUser}`);
-    const { id, email, subscription } = newUser;
+    console.log(`here should be user ${newUser}`);
+    const { id, email, subscription, avatar } = newUser;
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
-      data: { id, email, subscription },
+      data: { id, email, subscription, avatar },
     });
   } catch (error) {
     next(error);
@@ -83,6 +94,34 @@ const getUser = async (req, res, next) => {
   }
 };
 
+const avatars = async (req, res, next) => {
+  try {
+    const id = req.user.id;
+    const uploadCloud = promisify(cloudinary.uploader.upload);
+    const uploads = new UploadAvatar(uploadCloud);
+    const { userIdImg, avatarUrl } = await uploads.saveAvatarToCloud(
+      req.file.path,
+      req.user.userIdImg
+    );
+    //Static!!!
+    // const uploads = new UploadAvatar(AVATARS_OF_USERS);
+    // const avatarUrl = await uploads.saveAvatarToStatic({
+    //   idUser: id,
+    //   pathFile: req.file.path,
+    //   name: req.file.filename,
+    //   oldFile: req.user.avatar,
+    // });
+    await updateAvatar(id, avatarUrl, userIdImg);
+    return res.json({
+      status: 'success',
+      code: HttpCode.SUCCESS,
+      data: { avatarUrl },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateSubscription = async (req, res, next) => {
   try {
     const user = await update(req.params.id, req.body);
@@ -107,4 +146,11 @@ const logout = async (req, res, next) => {
   return res.status(HttpCode.NO_CONTENT).json({});
 };
 
-module.exports = { signup, login, getUser, logout, updateSubscription };
+module.exports = {
+  signup,
+  login,
+  getUser,
+  avatars,
+  logout,
+  updateSubscription,
+};
