@@ -34,6 +34,7 @@ const userSchema = new Schema({
       return gravatar.url(this.email, { s: 250 }, true);
     },
   },
+  userIdImg: { type: String, default: null },
 });
 
 userSchema.pre('save', async function (next) {
