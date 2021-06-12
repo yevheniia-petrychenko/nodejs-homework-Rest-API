@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const { Schema, model } = require('mongoose');
 const gravatar = require('gravatar');
+const { nanoid } = require('nanoid');
 const bcrypt = require('bcryptjs');
 const SALT_FACTOR = 6;
 const { Subscription } = require('../../helpers/constants');
@@ -35,6 +35,12 @@ const userSchema = new Schema({
     },
   },
   userIdImg: { type: String, default: null },
+  verify: { type: Boolean, default: false },
+  verifyToken: {
+    type: String,
+    required: [true, 'Verify token is required'],
+    default: nanoid(),
+  },
 });
 
 userSchema.pre('save', async function (next) {
@@ -49,6 +55,6 @@ userSchema.methods.validPassword = async function (password) {
   return bcrypt.compare(String(password), this.password);
 };
 
-const User = mongoose.model('user', userSchema);
+const User = model('user', userSchema);
 
 module.exports = User;
